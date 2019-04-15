@@ -1,3 +1,53 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hostpath-provisioner
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hostpath-provisioner-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - create
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hostpath-provisioner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hostpath-provisioner-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: hostpath-provisioner
+  namespace: kube-system
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -35,6 +85,7 @@ spec:
         - name: pv-volume
           hostPath:
             path: $SNAP_COMMON/default-storage
+      serviceAccountName: hostpath-provisioner
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
